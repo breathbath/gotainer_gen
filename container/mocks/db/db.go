@@ -1,4 +1,4 @@
 package db
 
-type Db struct {
+type DbProvider struct {
 }

@@ -5,30 +5,12 @@ import (
 	"strings"
 )
 
-type ReturnTypeDecl struct {
-	Name      string
-	IsPointer bool
-}
-
-type File struct {
-	PackangeName string
-	Funcs        []NewFunc
-}
-
-func (nf File) Render() string {
-	newFuncStrings := []string{}
-	for _, newF := range nf.Funcs {
-		newFuncStrings = append(newFuncStrings, newF.Render())
-	}
-	return fmt.Sprintf(`package %s
-
-%s
-`, nf.PackangeName, strings.Join(newFuncStrings, "\n"))
-}
+const NEW_FUNC_PREFIX = "GotainerNew"
 
 type NewFunc struct {
-	Ret        ReturnTypeDecl
+	Ret        ReturnType
 	StructName string
+	Args       []FuncArgument
 }
 
 func (nf NewFunc) Render() string {
@@ -37,11 +19,19 @@ func (nf NewFunc) Render() string {
 		pointerPrefix = "*"
 		pointerDeref = "&"
 	}
-	return fmt.Sprintf(`func GotainerNew%s() %s {
+	argsStr := ""
+	for _, arg := range nf.Args {
+		argsStr += arg.Render() + ", "
+	}
+	argsStr = strings.TrimRight(argsStr, ", ")
+
+	return fmt.Sprintf(`func %s%s(%s) %s {
    return %s{}
 }
 `,
+		NEW_FUNC_PREFIX,
 		nf.StructName,
+		argsStr,
 		pointerPrefix+nf.StructName,
 		pointerDeref+nf.StructName,
 	)

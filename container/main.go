@@ -1,16 +1,20 @@
 package main
 
 import (
-	"fmt"
 	"github.com/breathbath/gotainer_gen/container/parser"
+	"github.com/breathbath/gotainer_gen/container/render"
 )
 
 func main() {
-	curFile := "/Users/breathbath/Projects/gotainer_gen/src/github.com/breathbath/gotainer_gen/container/mocks/mockstr.go"
-	reflectedFile, err := parser.ParseFile(curFile)
+	pathToSave := "/Users/breathbath/Projects/gotainer_gen/src/github.com/breathbath/gotainer_gen/container/mocks/provider/"
+	fileToParse := pathToSave + "dataProvide.go"
+	reflectedFile, err := parser.ParseFile(fileToParse)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println(reflectedFile)
+	err = render.WriteFile(reflectedFile, pathToSave + "gotainerInit.go")
+	if err != nil {
+		panic(err)
+	}
 }

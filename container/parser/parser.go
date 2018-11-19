@@ -50,12 +50,13 @@ func parseImports(astFileSet *token.FileSet, filePath string) ([]ReflectedImport
 		if astImport.Path == nil {
 			continue
 		}
-		reflectedImport := ReflectedImport{Path: astImport.Path.Value, Alias: "", Namespace: ""}
+		importPath := strings.Trim(astImport.Path.Value, `"`)
+		reflectedImport := ReflectedImport{Path: importPath, Alias: "", Namespace: ""}
 		if astImport.Name != nil {
 			reflectedImport.Alias = astImport.Name.Name
 		}
 
-		pathParts := strings.Split(reflectedImport.Path, "/")
+		pathParts := strings.Split(importPath, "/")
 		reflectedImport.Namespace = pathParts[len(pathParts)-1]
 
 		relfImports = append(relfImports, reflectedImport)
@@ -67,7 +68,7 @@ func parseImports(astFileSet *token.FileSet, filePath string) ([]ReflectedImport
 func parsePackageName(filePath string, astParsedFile *ast.File, astFileSet *token.FileSet) (string, error) {
 	conf := types.Config{Importer: importer.Default()}
 	pkg, err := conf.Check(filePath, astFileSet, []*ast.File{astParsedFile}, nil)
-	if err != nil {
+	if pkg == nil {
 		return "", err
 	}
 
@@ -116,19 +117,44 @@ func parseStructFields(astStruct *ast.StructType) []ReflectedField {
 	reflFields := []ReflectedField{}
 	rootStructFields := astStruct.Fields.List
 	for _, rootStructField := range rootStructFields {
-		reflectedField := ReflectedField{}
+		reflectedField := parseStructField(rootStructField)
 
-		if rootStructField.Tag != nil && strings.Contains(rootStructField.Tag.Value, GOTAINER_COMMENT_TAG) {
-			reflectedField.Tag = rootStructField.Tag.Value
+		reflFields = append(reflFields, reflectedField)
+	}
+
+	return reflFields
+}
+
+func parseStructField(astField *ast.Field) ReflectedField {
+	reflectedField := ReflectedField{}
+
+	if astField.Tag != nil && strings.Contains(astField.Tag.Value, GOTAINER_COMMENT_TAG) {
+		reflectedField.Tag = astField.Tag.Value
+	}
+
+	if len(astField.Names) > 0 {
+		reflectedField.Name = astField.Names[0].Name
+	}
+
+	reflectedField.IsPointer = false
+
+	switch astField.Type.(type) {
+	case *ast.SelectorExpr:
+		selectorExpr := astField.Type.(*ast.SelectorExpr)
+
+		reflectedField.Type = selectorExpr.Sel.Name
+
+		x, ok := selectorExpr.X.(*ast.Ident)
+		if ok {
+			reflectedField.NameSpace = x.Name
 		}
-
-		if len(rootStructField.Names) > 0 {
-			reflectedField.Name = rootStructField.Names[0].Name
-		}
-
-		switch rootStructField.Type.(type) {
+	case *ast.Ident:
+		reflectedField.Type = astField.Type.(*ast.Ident).Name
+	case *ast.StarExpr:
+		astPointer := astField.Type.(*ast.StarExpr)
+		switch astPointer.X.(type) {
 		case *ast.SelectorExpr:
-			selectorExpr := rootStructField.Type.(*ast.SelectorExpr)
+			selectorExpr := astPointer.X.(*ast.SelectorExpr)
 
 			reflectedField.Type = selectorExpr.Sel.Name
 
@@ -137,11 +163,10 @@ func parseStructFields(astStruct *ast.StructType) []ReflectedField {
 				reflectedField.NameSpace = x.Name
 			}
 		case *ast.Ident:
-			reflectedField.Type = rootStructField.Type.(*ast.Ident).Name
+			reflectedField.Type = astField.Type.(*ast.Ident).Name
 		}
-
-		reflFields = append(reflFields, reflectedField)
+		reflectedField.IsPointer = true
 	}
 
-	return reflFields
+	return reflectedField
 }

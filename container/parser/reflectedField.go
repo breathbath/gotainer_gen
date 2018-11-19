@@ -5,4 +5,5 @@ type ReflectedField struct {
 	NameSpace string
 	Type      string
 	Tag       string
+	IsPointer bool
 }
