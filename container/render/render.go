@@ -1,15 +1,18 @@
 package render
 
 import (
+	"bytes"
 	"github.com/breathbath/gotainer_gen/container/parser"
 	"os"
+	"strings"
+	"text/template"
 )
 
 func RenderFile(reflFile parser.ReflectedFile) string {
 	fileToRender := NewFile()
-	fileToRender.PackangeName = reflFile.Package
+	fileToRender.PackageName = reflFile.Package
 
-	imports := map[string]parser.ReflectedImport {}
+	imports := map[string]parser.ReflectedImport{}
 	for _, imp := range reflFile.Imports {
 		nameSpace := imp.Namespace
 		if imp.Alias != "" {
@@ -26,9 +29,9 @@ func RenderFile(reflFile parser.ReflectedFile) string {
 			}
 
 			arg := FuncArgument{
-				Name: field.Name,
+				Name:      field.Name,
 				NameSpace: field.NameSpace,
-				Type: field.Type,
+				Type:      field.Type,
 				IsPointer: field.IsPointer,
 			}
 			reflImport, ok := imports[field.NameSpace]
@@ -42,7 +45,20 @@ func RenderFile(reflFile parser.ReflectedFile) string {
 		fileToRender.Funcs = append(fileToRender.Funcs, newFunc)
 	}
 
-	return fileToRender.Render()
+	funcMap := template.FuncMap{
+		"lower": strings.ToLower,
+		"fup": func(input string) string {
+			return strings.ToUpper(string(input[0])) + input[1:]
+		},
+	}
+	tmpl := template.Must(template.New("constructorFile").Funcs(funcMap).Parse(TEMPLATE + REUSABLE_BLOCKS))
+	buf := new(bytes.Buffer)
+	err := tmpl.Execute(buf, fileToRender)
+	if err != nil {
+		panic(err)
+	}
+
+	return buf.String()
 }
 
 func WriteFile(reflFile parser.ReflectedFile, path string) error {
