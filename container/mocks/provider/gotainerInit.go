@@ -5,15 +5,16 @@
 package provider
 
 import (
+	allFileTypes "github.com/breathbath/gotainer_gen/container/mocks/file/fileTypes"
 	"github.com/breathbath/gotainer_gen/container/mocks/db"
 	"github.com/breathbath/gotainer_gen/container/mocks/file"
-	allFileTypes "github.com/breathbath/gotainer_gen/container/mocks/file/fileTypes"
+	"time"
 )
 
 var (
-	gotainerInitVarGeneralProvider         GeneralProvider
-	isGotainerInitVarGeneralProviderInit   bool
-	gotainerInitVarDbProviderAdapter       DbProviderAdapter
+	gotainerInitVarGeneralProvider GeneralProvider
+	isGotainerInitVarGeneralProviderInit bool
+	gotainerInitVarDbProviderAdapter DbProviderAdapter
 	isGotainerInitVarDbProviderAdapterInit bool
 )
 
@@ -21,15 +22,35 @@ var (
 
 func gotainerNewGeneralProvider(
 	db db.DbProvider,
-	csvfile allFileTypes.CsvFile,
+	csvfilefield allFileTypes.CsvFile,
+	dbprovideadapt DbProviderAdapter,
 	fileprovider *file.FileProvider,
 	name string,
+	stringptr *string,
+	timefield time.Time,
+	duration time.Duration,
+	customscalarint MyInt,
+	intfield int,
+	int64field int64,
+	float64field float64,
+	boolfield bool,
+	uintfield uint,
 ) GeneralProvider {
 	return GeneralProvider{
-		Db:           db,
-		CsvFile:      csvfile,
+		Db: db,
+		CsvFileField: csvfilefield,
+		DbProvideAdapt: dbprovideadapt,
 		FileProvider: fileprovider,
-		name:         name,
+		name: name,
+		StringPtr: stringptr,
+		TimeField: timefield,
+		Duration: duration,
+		CustomScalarInt: customscalarint,
+		IntField: intfield,
+		Int64Field: int64field,
+		Float64Field: float64field,
+		BoolField: boolfield,
+		UintField: uintfield,
 	}
 }
 
@@ -48,11 +69,21 @@ func GotainerBuildGeneralProvider() GeneralProvider {
 		gotainerInitVarGeneralProvider = gotainerNewGeneralProvider(
 			db.GotainerBuildDbProvider(),
 			allFileTypes.GotainerBuildCsvFile(),
+			GotainerBuildDbProviderAdapter(),
 			file.GotainerBuildFileProviderPtr(),
 			GotainerBuildstring(),
+			GotainerBuildstringPtr(),
+			time.GotainerBuildTime(),
+			time.GotainerBuildDuration(),
+			GotainerBuildMyInt(),
+			GotainerBuildint(),
+			GotainerBuildint64(),
+			GotainerBuildfloat64(),
+			GotainerBuildbool(),
+			GotainerBuilduint(),
 		)
 		isGotainerInitVarGeneralProviderInit = true
-	}
+    }
 
 	return gotainerInitVarGeneralProvider
 }
@@ -63,7 +94,10 @@ func GotainerBuildDbProviderAdapter() DbProviderAdapter {
 			db.GotainerBuildDbProvider(),
 		)
 		isGotainerInitVarDbProviderAdapterInit = true
-	}
+    }
 
 	return gotainerInitVarDbProviderAdapter
 }
+
+
+

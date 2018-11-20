@@ -136,37 +136,45 @@ func parseStructField(astField *ast.Field) ReflectedField {
 		reflectedField.Name = astField.Names[0].Name
 	}
 
-	reflectedField.IsPointer = false
-
-	switch astField.Type.(type) {
-	case *ast.SelectorExpr:
-		selectorExpr := astField.Type.(*ast.SelectorExpr)
-
-		reflectedField.Type = selectorExpr.Sel.Name
-
-		x, ok := selectorExpr.X.(*ast.Ident)
-		if ok {
-			reflectedField.NameSpace = x.Name
-		}
-	case *ast.Ident:
-		reflectedField.Type = astField.Type.(*ast.Ident).Name
-	case *ast.StarExpr:
-		astPointer := astField.Type.(*ast.StarExpr)
-		switch astPointer.X.(type) {
-		case *ast.SelectorExpr:
-			selectorExpr := astPointer.X.(*ast.SelectorExpr)
-
-			reflectedField.Type = selectorExpr.Sel.Name
-
-			x, ok := selectorExpr.X.(*ast.Ident)
-			if ok {
-				reflectedField.NameSpace = x.Name
-			}
-		case *ast.Ident:
-			reflectedField.Type = astField.Type.(*ast.Ident).Name
-		}
-		reflectedField.IsPointer = true
-	}
+	namespace, typeName, isPointer := resolveTypeAndNamespace(astField)
+	reflectedField.IsPointer = isPointer
+	reflectedField.Type = typeName
+	reflectedField.NameSpace = namespace
 
 	return reflectedField
+}
+
+func resolveTypeAndNamespace(astField *ast.Field) (namespace, typName string, isPointer bool) {
+	switch typed := astField.Type.(type) {
+	case *ast.SelectorExpr:
+		typName = typed.Sel.Name
+		namespace = ""
+
+		x, ok := typed.X.(*ast.Ident)
+		if ok {
+			namespace = x.Name
+		}
+		isPointer = false
+		return
+	case *ast.Ident:
+		typName = typed.Name
+		namespace = ""
+		isPointer = false
+		return
+	case *ast.StarExpr:
+		isPointer = true
+		switch typedPointer := typed.X.(type) {
+		case *ast.SelectorExpr:
+			typedPointerNamespace, ok := typedPointer.X.(*ast.Ident)
+			if ok {
+				namespace = typedPointerNamespace.Name
+			}
+			typName = typedPointer.Sel.Name
+			return
+		case *ast.Ident:
+			typName = typedPointer.Name
+			return
+		}
+	}
+	return
 }
