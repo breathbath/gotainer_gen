@@ -23,12 +23,16 @@ type MyStructWithDifferentReferences struct {
 	StructOnePtr *ext_package.StructOne
 	//build slice of 3 interface implementations
 	AllInterfaceImpls []SomeInterface `gotainer:"[]InterfaceImplOne,[]InterfaceImplTwo,[]*InterfaceImplTwo"`
+	//build slice of all new SomeInterface implementations
+	AllInterfaceImplsImplicit []SomeInterface `gotainer:"SomeInterface"`
 	//call getInts to get integers, don't use cached version of dependency
 	SomeInts []int `gotainer:"getInts(),no-cache"`
 	//helps to find the correct implementation by fully qualified name, if none is specified first found is returned
 	SomeStaticInterfaceVariantHere  SomeInterface `gotainer:"InterfaceImplOne"`
 	//call some custom setter to let it decide which dependency to set, provide all needed dependencies for it
 	SomeDynamicInterfaceVariantHere SomeInterface `gotainer:"SetDynamicInterfaceImplementation(ext_package.name, InterfaceImplOne, InterfaceImplTwo)"`
+	//Conn implements Destroyable interface therefore it's destructor will appear in the common gargabe collection func gotainerDestroy
+	Conn Conn
 }
 
 func SetDynamicInterfaceImplementation(
