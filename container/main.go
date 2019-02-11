@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	pathToSave := "/Users/breathbath/Projects/gotainer_gen/src/github.com/breathbath/gotainer_gen/container/mocks/provider/"
+	pathToSave := "/Users/breathbath/Projects/gotainer_gen/container/mocks/provider/"
 	fileToParse := pathToSave + "dataProvide.go"
 	reflectedFile, err := parser.ParseFile(fileToParse)
 	if err != nil {
